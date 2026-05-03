@@ -1,0 +1,28 @@
+#:import dp kivy.metrics.dp
+
+
+<AboutScreen>:
+    name: "about"
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(16)
+        spacing: dp(8)
+
+        MDTopAppBar:
+            title: "About"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "home")]]
+
+        MDLabel:
+            text: f"EML-Spectral-App v{root.version}"
+            font_style: "H5"
+            size_hint_y: None
+            height: dp(40)
+        MDLabel:
+            text: f"eml-spectral {root.eml_spectral_version}    eml-math {root.eml_math_version}"
+            theme_text_color: "Hint"
+            size_hint_y: None
+            height: dp(28)
+        MDLabel:
+            text: "Visual explorer for the spectrum layer of the EML stack — Lorentz invariants, Φ-flow, Clifford / Octonion / E7 / E8 algebras, named GR metrics, E8 + Leech lattices.\n\nLibraries on PyPI:\n    pip install eml-spectral   (transitively installs eml-math)\n\nApp source:           github.com/andrewkwatts-maker/EML-Spectral-App\nLibrary source:       github.com/andrewkwatts-maker/EML-Spectral\n\nLicense: MIT"
+            text_size: self.width, None
+        Widget:

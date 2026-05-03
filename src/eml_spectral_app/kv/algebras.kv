@@ -1,0 +1,63 @@
+#:import dp kivy.metrics.dp
+
+
+<AlgebrasScreen>:
+    name: "algebras"
+    a_idx_field:  a_in
+    b_idx_field:  b_in
+    output_label: out
+
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(12)
+        spacing: dp(8)
+
+        MDTopAppBar:
+            title: "Algebras"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "home")]]
+
+        MDLabel:
+            text: "Octonions (Fano plane multiplication)"
+            font_style: "Subtitle1"
+            size_hint_y: None
+            height: dp(32)
+
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: dp(8)
+            MDTextField:
+                id: a_in
+                hint_text: "i (1-7)"; text: "1"; mode: "rectangle"
+            MDTextField:
+                id: b_in
+                hint_text: "j (1-7)"; text: "2"; mode: "rectangle"
+            MDRaisedButton:
+                text: "e_i · e_j"
+                on_release: root.octonion_mul()
+
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: dp(8)
+            MDFlatButton:
+                text: "E₇ portal coupling"
+                on_release: root.show_e7_alpha_leak()
+            MDFlatButton:
+                text: "E₈×E₈ racetrack"
+                on_release: root.show_e8_racetrack()
+
+        ScrollView:
+            MDLabel:
+                id: out
+                text: ""
+                font_style: "Body2"
+                font_name: "RobotoMono-Regular"
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+                halign: "left"
+
+        MDLabel:
+            text: root.status
+            theme_text_color: "Secondary"
+            size_hint_y: None
+            height: dp(24)

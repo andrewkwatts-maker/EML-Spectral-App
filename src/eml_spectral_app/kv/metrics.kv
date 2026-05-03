@@ -1,0 +1,81 @@
+#:import dp kivy.metrics.dp
+
+
+<MetricsScreen>:
+    name: "metrics"
+    metric_field: metric_in
+    rs_field:     rs_in
+    x_field:      x_in
+    y_field:      y_in
+    dx_field:     dx_in
+    dy_field:     dy_in
+    output_label: out
+
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(12)
+        spacing: dp(8)
+
+        MDTopAppBar:
+            title: "GR Metrics"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "home")]]
+
+        MDLabel:
+            text: "Available factories: flat, schwarzschild, flrw, ads5_x_s5, calabi_yau_3, klebanov_strassler, heterotic_e8x8, g2_holonomy"
+            theme_text_color: "Hint"
+            text_size: self.width, None
+            size_hint_y: None
+            height: self.texture_size[1]
+
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: dp(8)
+            MDTextField:
+                id: metric_in
+                hint_text: "metric name"
+                text: "schwarzschild"
+                mode: "rectangle"
+            MDTextField:
+                id: rs_in
+                hint_text: "rs (Schwarzschild radius)"
+                text: "2.0"
+                mode: "rectangle"
+
+        MDGridLayout:
+            cols: 4
+            spacing: dp(8)
+            size_hint_y: None
+            height: dp(56)
+            MDTextField:
+                id: x_in
+                hint_text: "x"; text: "3.0"; mode: "rectangle"
+            MDTextField:
+                id: y_in
+                hint_text: "y"; text: "1.0"; mode: "rectangle"
+            MDTextField:
+                id: dx_in
+                hint_text: "dx"; text: "0.01"; mode: "rectangle"
+            MDTextField:
+                id: dy_in
+                hint_text: "dy"; text: "0.0"; mode: "rectangle"
+
+        MDRaisedButton:
+            text: "Compute"
+            on_release: root.compute()
+            size_hint_x: None
+            width: dp(140)
+
+        ScrollView:
+            MDLabel:
+                id: out
+                text: ""
+                font_style: "Body2"
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+
+        MDLabel:
+            text: root.status
+            theme_text_color: "Secondary"
+            size_hint_y: None
+            height: dp(24)

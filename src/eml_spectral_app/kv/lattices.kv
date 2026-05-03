@@ -1,0 +1,42 @@
+#:import dp kivy.metrics.dp
+
+
+<LatticesScreen>:
+    name: "lattices"
+    output_label: out
+
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(12)
+        spacing: dp(8)
+
+        MDTopAppBar:
+            title: "Lattices"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "home")]]
+
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: dp(8)
+            MDRaisedButton:
+                text: "E₈"
+                on_release: root.show_e8()
+            MDRaisedButton:
+                text: "Leech"
+                on_release: root.show_leech()
+
+        ScrollView:
+            MDLabel:
+                id: out
+                text: ""
+                font_style: "Body2"
+                font_name: "RobotoMono-Regular"
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+                halign: "left"
+
+        MDLabel:
+            text: root.status
+            theme_text_color: "Secondary"
+            size_hint_y: None
+            height: dp(24)

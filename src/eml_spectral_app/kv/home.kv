@@ -1,0 +1,64 @@
+#:import dp kivy.metrics.dp
+
+
+<HomeScreen>:
+    name: "home"
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(16)
+        spacing: dp(12)
+
+        MDLabel:
+            text: f"EML-Spectral-App  [v{root.version}]"
+            font_style: "H4"
+            size_hint_y: None
+            height: dp(56)
+
+        MDLabel:
+            text: f"Backed by eml-spectral {root.eml_spectral_version}    Rust accel: {root.has_rust}"
+            theme_text_color: "Hint"
+            size_hint_y: None
+            height: dp(28)
+
+        MDLabel:
+            text: "Visual explorer for the spectrum layer of the EML stack: spectral flow Phi, Lorentz boosts, Clifford / Octonion / E7 / E8 algebras, named GR metrics, E8 + Leech lattices, 167 spectral + math constants."
+            theme_text_color: "Secondary"
+            text_size: self.width, None
+            size_hint_y: None
+            height: self.texture_size[1]
+
+        MDGridLayout:
+            cols: 2
+            spacing: dp(12)
+            adaptive_height: True
+
+            MDRaisedButton:
+                text: "Spectral Flow"
+                on_release: app.root.current = "spectral_flow"
+                size_hint_x: 1
+            MDRaisedButton:
+                text: "Spacetime"
+                on_release: app.root.current = "spacetime"
+                size_hint_x: 1
+            MDRaisedButton:
+                text: "Metrics (GR)"
+                on_release: app.root.current = "metrics"
+                size_hint_x: 1
+            MDRaisedButton:
+                text: "Algebras"
+                on_release: app.root.current = "algebras"
+                size_hint_x: 1
+            MDRaisedButton:
+                text: "Lattices"
+                on_release: app.root.current = "lattices"
+                size_hint_x: 1
+            MDRaisedButton:
+                text: "Constants"
+                on_release: app.root.current = "constants"
+                size_hint_x: 1
+            MDFlatButton:
+                text: "About"
+                on_release: app.root.current = "about"
+                size_hint_x: 1
+
+        Widget:

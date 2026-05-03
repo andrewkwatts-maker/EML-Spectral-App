@@ -1,0 +1,46 @@
+#:import dp kivy.metrics.dp
+
+
+<ConstantsScreen>:
+    name: "constants"
+    list_widget:  list_box
+    detail_label: detail
+    search_field: search
+
+    MDBoxLayout:
+        orientation: "vertical"
+        padding: dp(12)
+        spacing: dp(8)
+
+        MDTopAppBar:
+            title: "Constants  —  167 names"
+            left_action_items: [["arrow-left", lambda x: setattr(app.root, "current", "home")]]
+
+        MDTextField:
+            id: search
+            hint_text: "Filter (e8, alpha, lambda, leech, …)"
+            mode: "rectangle"
+            on_text: root.filter_changed(self.text)
+            size_hint_y: None
+            height: dp(48)
+
+        MDBoxLayout:
+            orientation: "horizontal"
+            spacing: dp(12)
+
+            ScrollView:
+                size_hint_x: 0.4
+                MDList:
+                    id: list_box
+
+            MDBoxLayout:
+                orientation: "vertical"
+                size_hint_x: 0.6
+                padding: dp(8)
+                MDLabel:
+                    id: detail
+                    text: root.detail_text
+                    text_size: self.width, None
+                    valign: "top"
+                    size_hint_y: None
+                    height: self.texture_size[1]
