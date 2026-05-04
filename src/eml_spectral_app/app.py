@@ -1,18 +1,19 @@
 """KivyMD application root for EML-Spectral-App.
 
-Loads every .kv file from ``kv/``, registers the eight screens. The
-``Algebras`` screen uses tabs internally; spectral / spacetime / metric /
-lattice / constants screens are top-level entries.
+Single-page calculator + EML renderer (mirroring the math-app). The whole
+UI is ``HomeScreen``, loaded from ``kv/home.kv``.
 """
 from __future__ import annotations
 
 from pathlib import Path
 
 from kivy.lang import Builder
-from kivy.uix.screenmanager import ScreenManager
 from kivymd.app import MDApp
 
 from eml_spectral_app import __version__
+# Eager imports so the Factory knows the custom widgets before kv parses.
+from eml_spectral_app.widgets.latex_preview import LatexPreview  # noqa: F401
+from eml_spectral_app.widgets.svg_view import TreeImageView  # noqa: F401
 
 _KV_DIR = Path(__file__).parent / "kv"
 
@@ -24,28 +25,11 @@ class EMLSpectralApp(MDApp):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "DeepPurple"
 
-        for kv in sorted(_KV_DIR.glob("*.kv"), key=lambda p: p.name == "root.kv"):
-            Builder.load_file(str(kv))
+        Builder.load_file(str(_KV_DIR / "root.kv"))
+        Builder.load_file(str(_KV_DIR / "home.kv"))
 
         from eml_spectral_app.screens.home import HomeScreen
-        from eml_spectral_app.screens.spectral_flow import SpectralFlowScreen
-        from eml_spectral_app.screens.spacetime import SpacetimeScreen
-        from eml_spectral_app.screens.metrics import MetricsScreen
-        from eml_spectral_app.screens.algebras import AlgebrasScreen
-        from eml_spectral_app.screens.lattices import LatticesScreen
-        from eml_spectral_app.screens.constants import ConstantsScreen
-        from eml_spectral_app.screens.about import AboutScreen
-
-        sm = ScreenManager()
-        sm.add_widget(HomeScreen(name="home"))
-        sm.add_widget(SpectralFlowScreen(name="spectral_flow"))
-        sm.add_widget(SpacetimeScreen(name="spacetime"))
-        sm.add_widget(MetricsScreen(name="metrics"))
-        sm.add_widget(AlgebrasScreen(name="algebras"))
-        sm.add_widget(LatticesScreen(name="lattices"))
-        sm.add_widget(ConstantsScreen(name="constants"))
-        sm.add_widget(AboutScreen(name="about"))
-        return sm
+        return HomeScreen()
 
 
 def run() -> None:

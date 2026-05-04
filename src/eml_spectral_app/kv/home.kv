@@ -1,64 +1,295 @@
 #:import dp kivy.metrics.dp
 
 
+# ─── Reusable: small flat key on the calculator pad ───────────────────────────
+<KeyButton@MDFlatButton>:
+    frag: ""
+    on_release: app.root.insert(self.frag) if self.frag else None
+    size_hint: 1, None
+    height: dp(38)
+    md_bg_color: app.theme_cls.bg_normal
+    line_color: app.theme_cls.divider_color
+
+
+# ─── Reusable: example "chip" — clicking sets the input field ─────────────────
+<ExampleChip@MDFlatButton>:
+    expression: ""
+    on_release: app.root.load_example(self.expression)
+    size_hint_y: None
+    height: dp(32)
+    md_bg_color: app.theme_cls.bg_normal
+    line_color: app.theme_cls.primary_color
+
+
+# ─── Reusable: card surrounding a render area ─────────────────────────────────
+<Card@MDBoxLayout>:
+    md_bg_color: 0.11, 0.11, 0.13, 1
+    radius: [dp(8),]
+    padding: dp(8)
+
+
 <HomeScreen>:
-    name: "home"
+    expr_field: expr_field
+    latex_preview: latex_preview
+    tree_view: tree_view
+    eml_field: eml_field
+    latex_field: latex_field
+    python_field: python_field
+    json_field: json_field
+
     MDBoxLayout:
         orientation: "vertical"
-        padding: dp(16)
-        spacing: dp(12)
+        padding: dp(14)
+        spacing: dp(10)
 
-        MDLabel:
-            text: f"EML-Spectral-App  [v{root.version}]"
-            font_style: "H4"
-            size_hint_y: None
-            height: dp(56)
-
-        MDLabel:
-            text: f"Backed by eml-spectral {root.eml_spectral_version}    Rust accel: {root.has_rust}"
-            theme_text_color: "Hint"
-            size_hint_y: None
-            height: dp(28)
-
-        MDLabel:
-            text: "Visual explorer for the spectrum layer of the EML stack: spectral flow Phi, Lorentz boosts, Clifford / Octonion / E7 / E8 algebras, named GR metrics, E8 + Leech lattices, 167 spectral + math constants."
-            theme_text_color: "Secondary"
-            text_size: self.width, None
-            size_hint_y: None
-            height: self.texture_size[1]
-
-        MDGridLayout:
-            cols: 2
+        # ─── Title strip ─────────────────────────────────────────────────
+        MDBoxLayout:
+            adaptive_height: True
             spacing: dp(12)
+            MDLabel:
+                text: "EML-Spectral"
+                font_style: "H5"
+                bold: True
+                size_hint_x: None
+                width: dp(170)
+            MDLabel:
+                text: "physics expressions  ·  rendered live  ·  hover the EML graph"
+                theme_text_color: "Hint"
+
+        # ─── Example chips — populated at runtime from
+        # services.famous.all_famous() (every named equation in eml-math). ─
+        ScrollView:
+            size_hint_y: None
+            height: dp(40)
+            do_scroll_y: False
+            MDBoxLayout:
+                id: chip_row
+                adaptive_width: True
+                spacing: dp(6)
+
+        # ─── Input row ────────────────────────────────────────────────────
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: dp(8)
+
+            MDTextField:
+                id: expr_field
+                hint_text: "Math expression — type freely; use the pad for function names"
+                text: "(1/x) + (y**3)"
+                mode: "rectangle"
+                multiline: False
+
+            MDRaisedButton:
+                text: "Compress"
+                on_release: root.compress_now()
+                size_hint_x: None
+                width: dp(108)
+
+            MDFlatButton:
+                text: "Clear"
+                on_release: root.clear()
+                size_hint_x: None
+                width: dp(64)
+
+        # ─── View pill switch ─────────────────────────────────────────────
+        # Two segments — Typed expression vs Compressed search result. Both
+        # the LaTeX preview and the EML graph swap together when toggled.
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: dp(6)
+            MDLabel:
+                text: "View:"
+                theme_text_color: "Hint"
+                size_hint_x: None
+                width: dp(46)
+            MDFlatButton:
+                text: "Typed"
+                size_hint_x: None
+                width: dp(96)
+                md_bg_color: app.theme_cls.primary_color if not root.show_compressed else app.theme_cls.bg_normal
+                line_color: app.theme_cls.primary_color
+                on_release: root.set_compressed(False)
+            MDFlatButton:
+                text: "Compressed"
+                size_hint_x: None
+                width: dp(140)
+                md_bg_color: app.theme_cls.primary_color if root.show_compressed else app.theme_cls.bg_normal
+                line_color: app.theme_cls.primary_color
+                on_release: root.set_compressed(True)
+            Widget:
+
+        # ─── LaTeX preview ────────────────────────────────────────────────
+        Card:
+            size_hint_y: None
+            height: dp(96)
+            LatexPreview:
+                id: latex_preview
+                allow_stretch: True
+                keep_ratio: True
+
+        # ─── Calculator pad: function names only ──────────────────────────
+        MDGridLayout:
+            cols: 6
+            spacing: dp(4)
             adaptive_height: True
 
-            MDRaisedButton:
-                text: "Spectral Flow"
-                on_release: app.root.current = "spectral_flow"
-                size_hint_x: 1
-            MDRaisedButton:
-                text: "Spacetime"
-                on_release: app.root.current = "spacetime"
-                size_hint_x: 1
-            MDRaisedButton:
-                text: "Metrics (GR)"
-                on_release: app.root.current = "metrics"
-                size_hint_x: 1
-            MDRaisedButton:
-                text: "Algebras"
-                on_release: app.root.current = "algebras"
-                size_hint_x: 1
-            MDRaisedButton:
-                text: "Lattices"
-                on_release: app.root.current = "lattices"
-                size_hint_x: 1
-            MDRaisedButton:
-                text: "Constants"
-                on_release: app.root.current = "constants"
-                size_hint_x: 1
-            MDFlatButton:
-                text: "About"
-                on_release: app.root.current = "about"
-                size_hint_x: 1
+            KeyButton:
+                text: "sin"
+                frag: "sin("
+            KeyButton:
+                text: "cos"
+                frag: "cos("
+            KeyButton:
+                text: "tan"
+                frag: "tan("
+            KeyButton:
+                text: "ln"
+                frag: "log("
+            KeyButton:
+                text: "log₁₀"
+                frag: "log10("
+            KeyButton:
+                text: "exp"
+                frag: "exp("
 
-        Widget:
+            KeyButton:
+                text: "√"
+                frag: "sqrt("
+            KeyButton:
+                text: "abs"
+                frag: "abs("
+            KeyButton:
+                text: "π"
+                frag: "pi"
+            KeyButton:
+                text: "e"
+                frag: "e"
+            KeyButton:
+                text: "^"
+                frag: "**"
+            KeyButton:
+                text: "⌫"
+                on_release: root.backspace()
+                frag: ""
+
+        # ─── Status + hover hint ──────────────────────────────────────────
+        MDLabel:
+            text: root.status
+            theme_text_color: "Hint"
+            size_hint_y: None
+            height: dp(20)
+            shorten: True
+            shorten_from: "right"
+
+        MDLabel:
+            text: root.hover_info
+            theme_text_color: "Secondary"
+            size_hint_y: None
+            height: dp(18)
+            shorten: True
+            shorten_from: "right"
+
+        # ─── Tree render ──────────────────────────────────────────────────
+        Card:
+            size_hint_y: 1
+            TreeImageView:
+                id: tree_view
+                allow_stretch: True
+                keep_ratio: True
+
+        # ─── Output strip with Copy buttons ───────────────────────────────
+        MDGridLayout:
+            cols: 4
+            spacing: dp(6)
+            size_hint_y: None
+            height: dp(96)
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(2)
+                MDBoxLayout:
+                    adaptive_height: True
+                    MDLabel:
+                        text: "EML"
+                        font_style: "Caption"
+                        size_hint_x: None
+                        width: dp(40)
+                    MDFlatButton:
+                        text: "Copy"
+                        on_release: root.copy_field(eml_field)
+                        size_hint_x: None
+                        width: dp(60)
+                ScrollView:
+                    do_scroll_x: False
+                    do_scroll_y: True
+                    bar_width: dp(4)
+                    MDTextField:
+                        id: eml_field
+                        readonly: True
+                        multiline: True
+                        mode: "rectangle"
+                        size_hint_y: None
+                        height: max(self.minimum_height, dp(60))
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(2)
+                MDBoxLayout:
+                    adaptive_height: True
+                    MDLabel:
+                        text: "LaTeX"
+                        font_style: "Caption"
+                        size_hint_x: None
+                        width: dp(50)
+                    MDFlatButton:
+                        text: "Copy"
+                        on_release: root.copy_field(latex_field)
+                        size_hint_x: None
+                        width: dp(60)
+                MDTextField:
+                    id: latex_field
+                    readonly: True
+                    multiline: True
+                    mode: "rectangle"
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(2)
+                MDBoxLayout:
+                    adaptive_height: True
+                    MDLabel:
+                        text: "Python"
+                        font_style: "Caption"
+                        size_hint_x: None
+                        width: dp(60)
+                    MDFlatButton:
+                        text: "Copy"
+                        on_release: root.copy_field(python_field)
+                        size_hint_x: None
+                        width: dp(60)
+                MDTextField:
+                    id: python_field
+                    readonly: True
+                    multiline: True
+                    mode: "rectangle"
+
+            MDBoxLayout:
+                orientation: "vertical"
+                spacing: dp(2)
+                MDBoxLayout:
+                    adaptive_height: True
+                    MDLabel:
+                        text: "JSON"
+                        font_style: "Caption"
+                        size_hint_x: None
+                        width: dp(50)
+                    MDFlatButton:
+                        text: "Copy"
+                        on_release: root.copy_field(json_field)
+                        size_hint_x: None
+                        width: dp(60)
+                MDTextField:
+                    id: json_field
+                    readonly: True
+                    multiline: True
+                    mode: "rectangle"

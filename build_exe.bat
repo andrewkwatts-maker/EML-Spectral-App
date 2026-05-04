@@ -15,22 +15,15 @@ echo Installing build dependencies and project ...
 
 echo.
 echo Running PyInstaller ...
-%PY% -m PyInstaller ^
-    --noconfirm ^
-    --name "EML-Spectral-App" ^
-    --windowed ^
-    --onefile ^
-    --add-data "src\eml_spectral_app\kv;eml_spectral_app\kv" ^
-    --add-data "src\eml_spectral_app\assets;eml_spectral_app\assets" ^
-    --collect-all kivymd ^
-    --collect-all kivy ^
-    --collect-all eml_math ^
-    --collect-all eml_spectral ^
-    src\eml_spectral_app\__main__.py
+REM Build from EML-Spectral-App.spec — the spec uses Kivy's official
+REM PyInstaller integration (kivy_deps + kivy.tools.packaging.pyinstaller_hooks)
+REM because --collect-all kivy crashes on Kivy 2.3 / Python 3.13 (kivy.garden
+REM is a legacy namespace package with a non-list __path__).
+%PY% -m PyInstaller --noconfirm EML-Spectral-App.spec
 
 echo.
 if exist dist\EML-Spectral-App.exe (
-    echo BUILD OK  ->  dist\EML-Spectral-App.exe
+    echo BUILD OK  --  dist\EML-Spectral-App.exe
 ) else (
     echo BUILD FAILED.
     exit /b 1
