@@ -29,7 +29,8 @@ class HomeScreen(MDScreen):
     name = StringProperty("home")
 
     expr_field = ObjectProperty(None)
-    latex_preview: LatexPreview = ObjectProperty(None)
+    latex_preview_normal: LatexPreview = ObjectProperty(None)
+    latex_preview_eml: LatexPreview = ObjectProperty(None)
     tree_view: TreeImageView = ObjectProperty(None)
     chip_row = ObjectProperty(None)
 
@@ -45,6 +46,11 @@ class HomeScreen(MDScreen):
     # the compressed search result. LaTeX preview and EML graph swap
     # together so the two views stay in sync.
     show_compressed = BooleanProperty(False)
+
+    # Tree orientation — one of "down" / "up" / "left" / "right". The
+    # arrow buttons above the graph card flip this; TreeImageView reads it
+    # via its own ``direction`` property.
+    tree_direction = StringProperty("down")
 
     _parser: MultiParser = None  # type: ignore[assignment]
     _parse_event: Any = None
@@ -87,6 +93,15 @@ class HomeScreen(MDScreen):
         if self.show_compressed == on:
             return
         self.show_compressed = on
+        self._schedule_parse()
+
+    # Direction switcher handler — flips the tree's flow.
+    def set_direction(self, direction: str) -> None:
+        if direction == self.tree_direction:
+            return
+        self.tree_direction = direction
+        if self.tree_view is not None:
+            self.tree_view.direction = direction
         self._schedule_parse()
 
     def _on_text_changed(self, _instance, _value) -> None:
@@ -140,23 +155,39 @@ class HomeScreen(MDScreen):
         self._render_tree(active_tree)
 
     def _refresh_latex_preview(self, text: str, parsed: Optional[Any]) -> None:
-        if self.latex_preview is None:
+        """Update both LaTeX panes — left = normal-math (patterns matched),
+        right = literal EML primitive form."""
+        if parsed is None:
+            if self.latex_preview_normal is not None:
+                self.latex_preview_normal.set_expression(text, None)
+            if self.latex_preview_eml is not None:
+                self.latex_preview_eml.set_latex("")
             return
-        # When the pill is on AND compress succeeded, render the compressed
-        # LaTeX directly; otherwise fall back to the typed-text path which
-        # the LatexPreview widget already knows how to handle.
-        if (self.show_compressed and parsed is not None
-                and parsed.compressed_latex):
-            from eml_spectral_app.services.latex_renderer import (
-                render_latex_png,
-            )
-            from io import BytesIO
-            from kivy.core.image import Image as CoreImage
-            png = render_latex_png(parsed.compressed_latex)
-            if png:
-                self.latex_preview.texture = CoreImage(BytesIO(png), ext="png").texture
-                return
-        self.latex_preview.set_expression(text, parsed)
+
+        compressed = self.show_compressed and parsed.compressed_tree is not None
+        normal_tree = parsed.compressed_normal_tree if compressed else parsed.normal_tree
+        eml_tree = parsed.compressed_tree if compressed else parsed.tree
+
+        # Normal-math pane: prefer the parallel expand_eml tree's to_latex
+        # (mul/div/pow patterns recognised). Fall back to the
+        # text→LaTeX path used previously.
+        if self.latex_preview_normal is not None:
+            try:
+                normal_latex = normal_tree.to_latex() if normal_tree is not None else ""
+            except Exception:                              # noqa: BLE001
+                normal_latex = ""
+            if normal_latex:
+                self.latex_preview_normal.set_latex(normal_latex)
+            else:
+                self.latex_preview_normal.set_expression(text, parsed)
+
+        # EML pane: literal pure-EML LaTeX from the graph's tree.
+        if self.latex_preview_eml is not None:
+            try:
+                eml_latex = eml_tree.to_latex() if eml_tree is not None else ""
+            except Exception:                              # noqa: BLE001
+                eml_latex = ""
+            self.latex_preview_eml.set_latex(eml_latex)
 
     def _populate_outputs(self, formats: dict) -> None:
         for field, key in (
@@ -188,8 +219,10 @@ class HomeScreen(MDScreen):
 
     def _clear_outputs(self, status: str) -> None:
         self._clear_tree(status)
-        if self.latex_preview is not None:
-            self.latex_preview.texture = None
+        if self.latex_preview_normal is not None:
+            self.latex_preview_normal.texture = None
+        if self.latex_preview_eml is not None:
+            self.latex_preview_eml.texture = None
 
     # ------------------------------------------------------------------
     # hover
@@ -205,20 +238,8 @@ class HomeScreen(MDScreen):
             self.expr_field.text = expression
 
     # ------------------------------------------------------------------
-    # calculator-pad
+    # input field
     # ------------------------------------------------------------------
-    def insert(self, fragment: str) -> None:
-        if self.expr_field is None or not fragment:
-            return
-        self.expr_field.focus = True
-        self.expr_field.insert_text(fragment)
-
-    def backspace(self) -> None:
-        if self.expr_field is None:
-            return
-        self.expr_field.focus = True
-        self.expr_field.do_backspace()
-
     def clear(self) -> None:
         if self.expr_field is not None:
             self.expr_field.text = ""
@@ -264,12 +285,16 @@ def _format_hover(node) -> str:
     if node is None:
         return _HOVER_HINT
     label = node.get("label") or "?"
-    if len(label) > 40:
-        label = label[:37] + "…"
     role = "leaf" if node.get("is_leaf") else "internal"
-    return (
+    head = (
         f"node {node.get('id')}  "
         f"kind={node.get('kind')}  "
         f"depth={node.get('depth')}  "
         f"{role}  ·  {label}"
     )
+    sub = node.get("subexpr_eml") or ""
+    if sub:
+        if len(sub) > 90:
+            sub = sub[:87] + "…"
+        head = f"{head}    ⇒  {sub}"
+    return head

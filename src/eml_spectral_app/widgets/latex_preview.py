@@ -21,7 +21,16 @@ class LatexPreview(KivyImage):
     """Image widget that always shows the most recent LaTeX render."""
 
     def set_expression(self, text: str, parsed: Optional[Any] = None) -> None:
+        """Render *text* (with optional parsed context) as LaTeX. Goes
+        through ``to_latex_source`` which prefers the parsed tree's
+        pattern-matched LaTeX, then sympy fallback."""
         latex = to_latex_source(text, parsed)
+        self.set_latex(latex or "")
+
+    def set_latex(self, latex: str) -> None:
+        """Skip the text→LaTeX step and render the given LaTeX string
+        directly. Used by callers that already have a LaTeX form (e.g. the
+        EML-primitive preview that walks ``tree.to_latex()`` directly)."""
         png = render_latex_png(latex) if latex else None
         if not png:
             self.texture = None

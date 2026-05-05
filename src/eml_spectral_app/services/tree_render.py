@@ -15,7 +15,7 @@ Pure I/O on bytes — no Kivy import.
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -59,6 +59,48 @@ def _node_color(node: Dict[str, Any]) -> Tuple[int, int, int, int]:
     return _NODE_DEFAULT
 
 
+def _attach_subexpressions(
+    tree: Any,
+    layout: Dict[str, Any],
+    normal_tree: Optional[Any] = None,  # noqa: ARG001  (kept for API symmetry)
+) -> None:
+    """Pair each layout node with its pure-EML subtree and stash a literal
+    LaTeX string onto the layout dict.
+
+    Field added: ``subexpr_eml`` — the subtree's ``to_latex()`` in literal
+    pure-EML form (verbose ``e^{\\ln …}`` chains).
+
+    A ``subexpr_normal`` field would require aligning a parallel
+    ``expand_eml=True`` tree against the pure-EML layout, but those two
+    trees have radically different shapes (pure-EML wraps every node in
+    ``eml(L,R)`` so the node count is much higher). We deliberately *don't*
+    attempt that pairing — the readable normal-math LaTeX of the whole
+    formula is shown in the side-by-side preview pane instead, computed
+    from ``ParsedExpression.normal_tree``.
+
+    eml-math's ``compute_layout`` walks the tree depth-first pre-order, so
+    a parallel DFS over our tree matches the layout one-for-one. If the
+    counts ever drift, drop the enrichment quietly.
+    """
+    layout_nodes = layout.get("nodes") or []
+    if not layout_nodes:
+        return
+
+    flat: List[Any] = []
+    def walk(n: Any) -> None:
+        flat.append(n)
+        for c in getattr(n, "children", ()) or ():
+            walk(c)
+    walk(tree)
+    if len(flat) != len(layout_nodes):
+        return
+    for i, n in enumerate(layout_nodes):
+        try:
+            n["subexpr_eml"] = flat[i].to_latex()
+        except Exception:                                  # noqa: BLE001
+            n["subexpr_eml"] = n.get("label", "")
+
+
 # ---------------------------------------------------------------------------
 def render_tree_with_labels(
     tree: Any,
@@ -75,10 +117,15 @@ def render_tree_with_labels(
     every edge is drawn as a Bezier-style curve between parent and child
     centres. The layout is the same one used by the hover hit-tester, so
     cursor → node detection still works against this image.
+
+    The layout dict each node receives a ``subexpr_eml`` field with the
+    literal pure-EML LaTeX of the subtree at that node — used by the
+    hover overlay.
     """
     layout = tree.layout(direction=direction, canvas=(width, height))
     canvas_w = float(layout["canvas"]["width"])
     canvas_h = float(layout["canvas"]["height"])
+    _attach_subexpressions(tree, layout)
 
     img = Image.new("RGBA", (int(canvas_w), int(canvas_h)), _BG_COLOR)
     draw = ImageDraw.Draw(img)

@@ -10,6 +10,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Protocol
 
+# The single rewrite step that maps caret / Unicode-operator user input
+# onto Python form lives in eml-math now (the library is the source of
+# truth for what the parser accepts). Re-export under the historical
+# private name so the existing call site stays unchanged.
+from eml_math import normalize_input as _normalize_input
+
 
 @dataclass
 class ParsedExpression:
@@ -22,11 +28,17 @@ class ParsedExpression:
     """
 
     eml: str            # canonical EML / Python source string for ``tree``
-    tree: Any           # EMLTreeNode — pure-EML view of the typed input
+    tree: Any           # EMLTreeNode — pure-EML (eml(L,R)) view, for the graph
     info_line: str      # one-line status describing the parse path
     search_result: Any = None       # eml_math.SearchResult when compress ran
     compressed_tree: Any = None     # pure-EML tree of the compressed form
     compressed_latex: str = ""      # LaTeX string of the compressed form
+    # Parallel "expanded but not pure" tree — used for the normal-math
+    # LaTeX rendering. Its to_latex() pattern-matches exp/ln/add/sub back
+    # into mul/div/pow/sqrt/inv etc. so the user sees readable maths
+    # alongside the literal EML primitive form on the graph side.
+    normal_tree: Any = None
+    compressed_normal_tree: Any = None
 
 
 class ParseStrategy(Protocol):
@@ -52,8 +64,9 @@ class _NamedSymbolStrategy:
             return None
         eml = decompress(r, fmt="eml")
         tree = parse_eml_tree(f"EML: {eml}", pure_eml=True)
+        normal_tree = parse_eml_tree(f"EML: {eml}", expand_eml=True)
         return ParsedExpression(
-            eml=eml, tree=tree,
+            eml=eml, tree=tree, normal_tree=normal_tree,
             info_line=f"named symbol  (complexity={r.complexity})",
             search_result=r,
         )
@@ -81,18 +94,23 @@ class _CompressStrategy:
         # The pill switch chooses between them at render time.
         compressed_eml = decompress(r, fmt="eml")
         compressed_tree = parse_eml_tree(f"EML: {compressed_eml}", pure_eml=True)
+        compressed_normal = parse_eml_tree(f"EML: {compressed_eml}", expand_eml=True)
         try:
             typed_tree = parse_eml_tree(f"EML: {text}", pure_eml=True)
+            typed_normal = parse_eml_tree(f"EML: {text}", expand_eml=True)
         except Exception:                                  # noqa: BLE001
             typed_tree = compressed_tree
+            typed_normal = compressed_normal
         return ParsedExpression(
             eml=text,
             tree=typed_tree,
+            normal_tree=typed_normal,
             info_line=(
                 f"via compress  (complexity={r.complexity}  error={r.error:.2e})"
             ),
             search_result=r,
             compressed_tree=compressed_tree,
+            compressed_normal_tree=compressed_normal,
             compressed_latex=decompress(r, fmt="latex"),
         )
 
@@ -114,10 +132,12 @@ class _DirectParseStrategy:
         from eml_math import parse_eml_tree
         try:
             tree = parse_eml_tree(f"EML: {text}", pure_eml=True)
+            normal_tree = parse_eml_tree(f"EML: {text}", expand_eml=True)
         except Exception:                                  # noqa: BLE001
             return None
         return ParsedExpression(
-            eml=text, tree=tree, info_line="parsed directly (no compression)",
+            eml=text, tree=tree, normal_tree=normal_tree,
+            info_line="parsed directly (no compression)",
         )
 
 
@@ -129,6 +149,7 @@ class MultiParser:
         self._strategies: List[ParseStrategy] = list(strategies)
 
     def parse(self, text: str) -> Optional[ParsedExpression]:
+        text = _normalize_input(text)
         for strat in self._strategies:
             if not strat.applies(text):
                 continue

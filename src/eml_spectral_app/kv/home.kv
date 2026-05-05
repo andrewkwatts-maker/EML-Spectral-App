@@ -1,16 +1,6 @@
 #:import dp kivy.metrics.dp
 
 
-# ─── Reusable: small flat key on the calculator pad ───────────────────────────
-<KeyButton@MDFlatButton>:
-    frag: ""
-    on_release: app.root.insert(self.frag) if self.frag else None
-    size_hint: 1, None
-    height: dp(38)
-    md_bg_color: app.theme_cls.bg_normal
-    line_color: app.theme_cls.divider_color
-
-
 # ─── Reusable: example "chip" — clicking sets the input field ─────────────────
 <ExampleChip@MDFlatButton>:
     expression: ""
@@ -32,7 +22,8 @@
 
 <HomeScreen>:
     expr_field: expr_field
-    latex_preview: latex_preview
+    latex_preview_normal: latex_preview_normal
+    latex_preview_eml: latex_preview_eml
     tree_view: tree_view
     eml_field: eml_field
     latex_field: latex_field
@@ -74,9 +65,9 @@
             adaptive_height: True
             spacing: dp(8)
 
-            MDTextField:
+            ExprInput:
                 id: expr_field
-                hint_text: "Math expression — type freely; use the pad for function names"
+                hint_text: "Math expression — type freely; right-click for function names"
                 text: "(1/x) + (y**3)"
                 mode: "rectangle"
                 multiline: False
@@ -120,59 +111,42 @@
                 on_release: root.set_compressed(True)
             Widget:
 
-        # ─── LaTeX preview ────────────────────────────────────────────────
-        Card:
+        # ─── Side-by-side LaTeX previews ──────────────────────────────────
+        # Left  — normal-math LaTeX (mul/div/pow patterns recognised).
+        # Right — literal EML primitive LaTeX (verbose exp/ln/eml chain).
+        # Pill switch (Typed / Compressed) swaps both panes together.
+        MDBoxLayout:
             size_hint_y: None
-            height: dp(96)
-            LatexPreview:
-                id: latex_preview
-                allow_stretch: True
-                keep_ratio: True
+            height: dp(110)
+            spacing: dp(8)
 
-        # ─── Calculator pad: function names only ──────────────────────────
-        MDGridLayout:
-            cols: 6
-            spacing: dp(4)
-            adaptive_height: True
+            Card:
+                orientation: "vertical"
+                size_hint_x: 1
+                MDLabel:
+                    text: "Normal math"
+                    font_style: "Caption"
+                    theme_text_color: "Hint"
+                    size_hint_y: None
+                    height: dp(16)
+                LatexPreview:
+                    id: latex_preview_normal
+                    allow_stretch: True
+                    keep_ratio: True
 
-            KeyButton:
-                text: "sin"
-                frag: "sin("
-            KeyButton:
-                text: "cos"
-                frag: "cos("
-            KeyButton:
-                text: "tan"
-                frag: "tan("
-            KeyButton:
-                text: "ln"
-                frag: "log("
-            KeyButton:
-                text: "log₁₀"
-                frag: "log10("
-            KeyButton:
-                text: "exp"
-                frag: "exp("
-
-            KeyButton:
-                text: "√"
-                frag: "sqrt("
-            KeyButton:
-                text: "abs"
-                frag: "abs("
-            KeyButton:
-                text: "π"
-                frag: "pi"
-            KeyButton:
-                text: "e"
-                frag: "e"
-            KeyButton:
-                text: "^"
-                frag: "**"
-            KeyButton:
-                text: "⌫"
-                on_release: root.backspace()
-                frag: ""
+            Card:
+                orientation: "vertical"
+                size_hint_x: 1
+                MDLabel:
+                    text: "EML primitive"
+                    font_style: "Caption"
+                    theme_text_color: "Hint"
+                    size_hint_y: None
+                    height: dp(16)
+                LatexPreview:
+                    id: latex_preview_eml
+                    allow_stretch: True
+                    keep_ratio: True
 
         # ─── Status + hover hint ──────────────────────────────────────────
         MDLabel:
@@ -190,6 +164,47 @@
             height: dp(18)
             shorten: True
             shorten_from: "right"
+
+        # ─── Direction switcher ───────────────────────────────────────────
+        # Four arrow buttons. The active direction is highlighted with the
+        # primary palette; clicking another flips the graph and re-renders.
+        MDBoxLayout:
+            adaptive_height: True
+            spacing: dp(4)
+            MDLabel:
+                text: "Direction:"
+                theme_text_color: "Hint"
+                size_hint_x: None
+                width: dp(82)
+            MDFlatButton:
+                text: "↓"
+                size_hint_x: None
+                width: dp(48)
+                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "down" else app.theme_cls.bg_normal
+                line_color: app.theme_cls.primary_color
+                on_release: root.set_direction("down")
+            MDFlatButton:
+                text: "↑"
+                size_hint_x: None
+                width: dp(48)
+                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "up" else app.theme_cls.bg_normal
+                line_color: app.theme_cls.primary_color
+                on_release: root.set_direction("up")
+            MDFlatButton:
+                text: "←"
+                size_hint_x: None
+                width: dp(48)
+                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "left" else app.theme_cls.bg_normal
+                line_color: app.theme_cls.primary_color
+                on_release: root.set_direction("left")
+            MDFlatButton:
+                text: "→"
+                size_hint_x: None
+                width: dp(48)
+                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "right" else app.theme_cls.bg_normal
+                line_color: app.theme_cls.primary_color
+                on_release: root.set_direction("right")
+            Widget:
 
         # ─── Tree render ──────────────────────────────────────────────────
         Card:
