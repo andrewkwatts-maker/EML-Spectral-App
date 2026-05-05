@@ -28,6 +28,8 @@
     padding: dp(8)
 
 
+
+
 <HomeScreen>:
     expr_field: expr_field
     latex_preview: latex_preview
@@ -197,13 +199,18 @@
                 allow_stretch: True
                 keep_ratio: True
 
-        # ─── Output strip with Copy buttons ───────────────────────────────
+        # ─── Output strip ─────────────────────────────────────────────────
+        # Four fixed-height columns. Each holds a header (label + Copy
+        # button) and a ScrollView whose visible height never changes; the
+        # inner Label grows with content and scrolls inside the card. This
+        # is what stops the JSON dump from bleeding up into the tree area.
         MDGridLayout:
             cols: 4
             spacing: dp(6)
             size_hint_y: None
-            height: dp(96)
+            height: dp(140)
 
+            # ── EML column ────────────────────────────────────────────────
             MDBoxLayout:
                 orientation: "vertical"
                 spacing: dp(2)
@@ -212,25 +219,33 @@
                     MDLabel:
                         text: "EML"
                         font_style: "Caption"
-                        size_hint_x: None
-                        width: dp(40)
+                        size_hint_x: 1
                     MDFlatButton:
                         text: "Copy"
-                        on_release: root.copy_field(eml_field)
                         size_hint_x: None
                         width: dp(60)
-                ScrollView:
-                    do_scroll_x: False
-                    do_scroll_y: True
-                    bar_width: dp(4)
-                    MDTextField:
-                        id: eml_field
-                        readonly: True
-                        multiline: True
-                        mode: "rectangle"
-                        size_hint_y: None
-                        height: max(self.minimum_height, dp(60))
+                        on_release: root.copy_field(eml_field)
+                MDBoxLayout:
+                    md_bg_color: 0.08, 0.08, 0.10, 1
+                    radius: [dp(6),]
+                    padding: dp(2)
+                    size_hint_y: None
+                    height: dp(108)
+                    ScrollView:
+                        do_scroll_x: False
+                        bar_width: dp(4)
+                        Label:
+                            id: eml_field
+                            text_size: self.width, None
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            color: 0.92, 0.92, 0.94, 1
+                            font_size: dp(12)
+                            halign: "left"
+                            valign: "top"
+                            padding: dp(6), dp(4)
 
+            # ── LaTeX column ──────────────────────────────────────────────
             MDBoxLayout:
                 orientation: "vertical"
                 spacing: dp(2)
@@ -239,19 +254,33 @@
                     MDLabel:
                         text: "LaTeX"
                         font_style: "Caption"
-                        size_hint_x: None
-                        width: dp(50)
+                        size_hint_x: 1
                     MDFlatButton:
                         text: "Copy"
-                        on_release: root.copy_field(latex_field)
                         size_hint_x: None
                         width: dp(60)
-                MDTextField:
-                    id: latex_field
-                    readonly: True
-                    multiline: True
-                    mode: "rectangle"
+                        on_release: root.copy_field(latex_field)
+                MDBoxLayout:
+                    md_bg_color: 0.08, 0.08, 0.10, 1
+                    radius: [dp(6),]
+                    padding: dp(2)
+                    size_hint_y: None
+                    height: dp(108)
+                    ScrollView:
+                        do_scroll_x: False
+                        bar_width: dp(4)
+                        Label:
+                            id: latex_field
+                            text_size: self.width, None
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            color: 0.92, 0.92, 0.94, 1
+                            font_size: dp(12)
+                            halign: "left"
+                            valign: "top"
+                            padding: dp(6), dp(4)
 
+            # ── Python column ─────────────────────────────────────────────
             MDBoxLayout:
                 orientation: "vertical"
                 spacing: dp(2)
@@ -260,19 +289,33 @@
                     MDLabel:
                         text: "Python"
                         font_style: "Caption"
-                        size_hint_x: None
-                        width: dp(60)
+                        size_hint_x: 1
                     MDFlatButton:
                         text: "Copy"
-                        on_release: root.copy_field(python_field)
                         size_hint_x: None
                         width: dp(60)
-                MDTextField:
-                    id: python_field
-                    readonly: True
-                    multiline: True
-                    mode: "rectangle"
+                        on_release: root.copy_field(python_field)
+                MDBoxLayout:
+                    md_bg_color: 0.08, 0.08, 0.10, 1
+                    radius: [dp(6),]
+                    padding: dp(2)
+                    size_hint_y: None
+                    height: dp(108)
+                    ScrollView:
+                        do_scroll_x: False
+                        bar_width: dp(4)
+                        Label:
+                            id: python_field
+                            text_size: self.width, None
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            color: 0.92, 0.92, 0.94, 1
+                            font_size: dp(12)
+                            halign: "left"
+                            valign: "top"
+                            padding: dp(6), dp(4)
 
+            # ── JSON column ───────────────────────────────────────────────
             MDBoxLayout:
                 orientation: "vertical"
                 spacing: dp(2)
@@ -281,15 +324,28 @@
                     MDLabel:
                         text: "JSON"
                         font_style: "Caption"
-                        size_hint_x: None
-                        width: dp(50)
+                        size_hint_x: 1
                     MDFlatButton:
                         text: "Copy"
-                        on_release: root.copy_field(json_field)
                         size_hint_x: None
                         width: dp(60)
-                MDTextField:
-                    id: json_field
-                    readonly: True
-                    multiline: True
-                    mode: "rectangle"
+                        on_release: root.copy_field(json_field)
+                MDBoxLayout:
+                    md_bg_color: 0.08, 0.08, 0.10, 1
+                    radius: [dp(6),]
+                    padding: dp(2)
+                    size_hint_y: None
+                    height: dp(108)
+                    ScrollView:
+                        do_scroll_x: False
+                        bar_width: dp(4)
+                        Label:
+                            id: json_field
+                            text_size: self.width, None
+                            size_hint_y: None
+                            height: self.texture_size[1]
+                            color: 0.92, 0.92, 0.94, 1
+                            font_size: dp(12)
+                            halign: "left"
+                            valign: "top"
+                            padding: dp(6), dp(4)
