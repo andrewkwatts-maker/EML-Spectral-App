@@ -33,13 +33,19 @@ class HomeScreen(MDScreen):
     latex_preview_eml: LatexPreview = ObjectProperty(None)
     tree_view: TreeImageView = ObjectProperty(None)
     chip_row = ObjectProperty(None)
+    # eml_field / latex_field / python_field / json_field were the inline
+    # output fields in the previous layout; replaced by the four CopyChip
+    # buttons that read root.copy_eml / .copy_latex / .copy_python /
+    # .copy_json. Properties removed deliberately.
 
-    eml_field = ObjectProperty(None)
-    latex_field = ObjectProperty(None)
-    python_field = ObjectProperty(None)
-    json_field = ObjectProperty(None)
+    # Plain string properties — the bottom output strip uses CopyChip
+    # buttons keyed on these instead of inline TextField widgets.
+    copy_eml = StringProperty("")
+    copy_latex = StringProperty("")
+    copy_python = StringProperty("")
+    copy_json = StringProperty("")
 
-    status = StringProperty("Type a math expression — `sin`/`cos`/etc are on the pad")
+    status = StringProperty("Type a math expression — right-click the input for function names")
     hover_info = StringProperty(_HOVER_HINT)
 
     # Pill switch — False = show the user's typed expression. True = show
@@ -51,6 +57,8 @@ class HomeScreen(MDScreen):
     # arrow buttons above the graph card flip this; TreeImageView reads it
     # via its own ``direction`` property.
     tree_direction = StringProperty("down")
+    # Topology-only mode: hide every node's label box (hover still works).
+    show_labels = BooleanProperty(True)
 
     _parser: MultiParser = None  # type: ignore[assignment]
     _parse_event: Any = None
@@ -102,6 +110,14 @@ class HomeScreen(MDScreen):
         self.tree_direction = direction
         if self.tree_view is not None:
             self.tree_view.direction = direction
+        self._schedule_parse()
+
+    # Label-visibility toggle — hides the per-node label boxes; the hover
+    # layer keeps working because layout dicts still carry subexpr fields.
+    def toggle_labels(self) -> None:
+        self.show_labels = not self.show_labels
+        if self.tree_view is not None:
+            self.tree_view.show_labels = self.show_labels
         self._schedule_parse()
 
     def _on_text_changed(self, _instance, _value) -> None:
@@ -190,14 +206,12 @@ class HomeScreen(MDScreen):
             self.latex_preview_eml.set_latex(eml_latex)
 
     def _populate_outputs(self, formats: dict) -> None:
-        for field, key in (
-            (self.eml_field, "eml"),
-            (self.latex_field, "latex"),
-            (self.python_field, "python"),
-            (self.json_field, "json"),
-        ):
-            if field is not None:
-                field.text = formats[key]
+        # Stash the format strings on the screen — the CopyChip buttons
+        # in the bottom strip pick these up via root.copy_eml etc.
+        self.copy_eml = formats["eml"]
+        self.copy_latex = formats["latex"]
+        self.copy_python = formats["python"]
+        self.copy_json = formats["json"]
 
     def _render_tree(self, tree) -> None:
         if self.tree_view is None or tree is None:
@@ -211,9 +225,10 @@ class HomeScreen(MDScreen):
         self.status = status
         if self.tree_view is not None:
             self.tree_view.show_tree(None)
-        for f in (self.eml_field, self.latex_field, self.python_field, self.json_field):
-            if f is not None:
-                f.text = ""
+        self.copy_eml = ""
+        self.copy_latex = ""
+        self.copy_python = ""
+        self.copy_json = ""
         self.hover_info = _HOVER_HINT
         self._last_parsed = None
 
@@ -268,11 +283,10 @@ class HomeScreen(MDScreen):
     # ------------------------------------------------------------------
     # clipboard
     # ------------------------------------------------------------------
-    def copy_field(self, field) -> None:
-        if field is None:
-            return
-        Clipboard.copy(field.text or "")
-        self.status = "Copied to clipboard"
+    def copy_text(self, text: str, label: str = "") -> None:
+        """Copy *text* to the clipboard. Shows a status pip with *label*."""
+        Clipboard.copy(text or "")
+        self.status = f"Copied {label} to clipboard" if label else "Copied"
 
     # ------------------------------------------------------------------
     # helpers
@@ -282,19 +296,24 @@ class HomeScreen(MDScreen):
 
 
 def _format_hover(node) -> str:
+    """Two-line hover string — normal math on top, literal EML below."""
     if node is None:
         return _HOVER_HINT
     label = node.get("label") or "?"
     role = "leaf" if node.get("is_leaf") else "internal"
     head = (
-        f"node {node.get('id')}  "
-        f"kind={node.get('kind')}  "
-        f"depth={node.get('depth')}  "
-        f"{role}  ·  {label}"
+        f"{node.get('id')}  ·  {node.get('kind')}  ·  depth={node.get('depth')}"
+        f"  ·  {role}  ·  label={label}"
     )
-    sub = node.get("subexpr_eml") or ""
-    if sub:
-        if len(sub) > 90:
-            sub = sub[:87] + "…"
-        head = f"{head}    ⇒  {sub}"
-    return head
+    normal = node.get("subexpr_normal") or ""
+    eml = node.get("subexpr_eml") or ""
+    if len(normal) > 110:
+        normal = normal[:107] + "…"
+    if len(eml) > 110:
+        eml = eml[:107] + "…"
+    parts = [head]
+    if normal:
+        parts.append(f"normal math:  {normal}")
+    if eml:
+        parts.append(f"EML:          {eml}")
+    return "\n".join(parts)

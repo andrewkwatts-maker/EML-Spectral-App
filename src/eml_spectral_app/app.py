@@ -12,6 +12,7 @@ from kivymd.app import MDApp
 
 from eml_spectral_app import __version__
 # Eager imports so the Factory knows the custom widgets before kv parses.
+from eml_spectral_app.widgets.copy_chip import CopyChip  # noqa: F401
 from eml_spectral_app.widgets.expr_input import ExprInput  # noqa: F401
 from eml_spectral_app.widgets.latex_preview import LatexPreview  # noqa: F401
 from eml_spectral_app.widgets.svg_view import TreeImageView  # noqa: F401
@@ -26,6 +27,7 @@ class EMLSpectralApp(MDApp):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "DeepPurple"
 
+        # root.kv first (defines shared rules), then home.kv.
         Builder.load_file(str(_KV_DIR / "root.kv"))
         Builder.load_file(str(_KV_DIR / "home.kv"))
 

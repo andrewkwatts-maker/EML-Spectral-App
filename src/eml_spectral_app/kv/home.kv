@@ -18,6 +18,15 @@
     padding: dp(8)
 
 
+# ─── Visual styling for the CopyChip Python widget defined in
+# widgets/copy_chip.py — title-as-trigger, hover shows preview tooltip.
+<CopyChip>:
+    size_hint_x: 1
+    md_bg_color: app.theme_cls.bg_normal
+    line_color: app.theme_cls.divider_color
+    tooltip_text: self.preview if self.preview else "(empty)"
+
+
 
 
 <HomeScreen>:
@@ -25,40 +34,34 @@
     latex_preview_normal: latex_preview_normal
     latex_preview_eml: latex_preview_eml
     tree_view: tree_view
-    eml_field: eml_field
-    latex_field: latex_field
-    python_field: python_field
-    json_field: json_field
 
     MDBoxLayout:
         orientation: "vertical"
-        padding: dp(14)
-        spacing: dp(10)
+        padding: dp(8)
+        spacing: dp(6)
 
-        # ─── Title strip ─────────────────────────────────────────────────
+        # ─── Header strip — compact title + chip scroller in one row.
+        # Saves a full row of vertical space vs the previous two-row
+        # title-then-chip layout, giving the graph more breathing room.
         MDBoxLayout:
-            adaptive_height: True
-            spacing: dp(12)
+            size_hint_y: None
+            height: dp(36)
+            spacing: dp(8)
             MDLabel:
                 text: "EML-Spectral"
-                font_style: "H5"
+                font_style: "Subtitle1"
                 bold: True
                 size_hint_x: None
-                width: dp(170)
-            MDLabel:
-                text: "physics expressions  ·  rendered live  ·  hover the EML graph"
-                theme_text_color: "Hint"
-
-        # ─── Example chips — populated at runtime from
-        # services.famous.all_famous() (every named equation in eml-math). ─
-        ScrollView:
-            size_hint_y: None
-            height: dp(40)
-            do_scroll_y: False
-            MDBoxLayout:
-                id: chip_row
-                adaptive_width: True
-                spacing: dp(6)
+                width: dp(140)
+                valign: "center"
+            ScrollView:
+                size_hint_y: None
+                height: dp(36)
+                do_scroll_y: False
+                MDBoxLayout:
+                    id: chip_row
+                    adaptive_width: True
+                    spacing: dp(4)
 
         # ─── Input row ────────────────────────────────────────────────────
         MDBoxLayout:
@@ -160,50 +163,60 @@
         MDLabel:
             text: root.hover_info
             theme_text_color: "Secondary"
+            font_style: "Caption"
+            font_name: "RobotoMono-Regular" if False else self.font_name
             size_hint_y: None
-            height: dp(18)
-            shorten: True
-            shorten_from: "right"
+            height: dp(54)
+            text_size: self.width, None
+            shorten: False
+            valign: "top"
 
-        # ─── Direction switcher ───────────────────────────────────────────
-        # Four arrow buttons. The active direction is highlighted with the
-        # primary palette; clicking another flips the graph and re-renders.
+        # ─── Direction switcher + label toggle ────────────────────────────
+        # Material-icon buttons render reliably with the bundled font;
+        # Unicode arrows often miss in PyInstaller'd builds. The "labels"
+        # toggle hides every node label (hover still works) — useful when
+        # you just want to read the tree shape.
         MDBoxLayout:
             adaptive_height: True
-            spacing: dp(4)
+            spacing: dp(2)
             MDLabel:
                 text: "Direction:"
                 theme_text_color: "Hint"
                 size_hint_x: None
                 width: dp(82)
-            MDFlatButton:
-                text: "↓"
-                size_hint_x: None
-                width: dp(48)
-                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "down" else app.theme_cls.bg_normal
-                line_color: app.theme_cls.primary_color
+            MDIconButton:
+                icon: "arrow-down"
+                theme_icon_color: "Custom"
+                icon_color: app.theme_cls.primary_color if root.tree_direction == "down" else (0.7, 0.7, 0.75, 1)
                 on_release: root.set_direction("down")
-            MDFlatButton:
-                text: "↑"
-                size_hint_x: None
-                width: dp(48)
-                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "up" else app.theme_cls.bg_normal
-                line_color: app.theme_cls.primary_color
+            MDIconButton:
+                icon: "arrow-up"
+                theme_icon_color: "Custom"
+                icon_color: app.theme_cls.primary_color if root.tree_direction == "up" else (0.7, 0.7, 0.75, 1)
                 on_release: root.set_direction("up")
-            MDFlatButton:
-                text: "←"
-                size_hint_x: None
-                width: dp(48)
-                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "left" else app.theme_cls.bg_normal
-                line_color: app.theme_cls.primary_color
+            MDIconButton:
+                icon: "arrow-left"
+                theme_icon_color: "Custom"
+                icon_color: app.theme_cls.primary_color if root.tree_direction == "left" else (0.7, 0.7, 0.75, 1)
                 on_release: root.set_direction("left")
-            MDFlatButton:
-                text: "→"
-                size_hint_x: None
-                width: dp(48)
-                md_bg_color: app.theme_cls.primary_color if root.tree_direction == "right" else app.theme_cls.bg_normal
-                line_color: app.theme_cls.primary_color
+            MDIconButton:
+                icon: "arrow-right"
+                theme_icon_color: "Custom"
+                icon_color: app.theme_cls.primary_color if root.tree_direction == "right" else (0.7, 0.7, 0.75, 1)
                 on_release: root.set_direction("right")
+            Widget:
+                size_hint_x: None
+                width: dp(16)
+            MDLabel:
+                text: "Labels:"
+                theme_text_color: "Hint"
+                size_hint_x: None
+                width: dp(60)
+            MDIconButton:
+                icon: "eye" if root.show_labels else "eye-off"
+                theme_icon_color: "Custom"
+                icon_color: app.theme_cls.primary_color if root.show_labels else (0.7, 0.7, 0.75, 1)
+                on_release: root.toggle_labels()
             Widget:
 
         # ─── Tree render ──────────────────────────────────────────────────
@@ -215,152 +228,28 @@
                 keep_ratio: True
 
         # ─── Output strip ─────────────────────────────────────────────────
-        # Four fixed-height columns. Each holds a header (label + Copy
-        # button) and a ScrollView whose visible height never changes; the
-        # inner Label grows with content and scrolls inside the card. This
-        # is what stops the JSON dump from bleeding up into the tree area.
-        MDGridLayout:
-            cols: 4
-            spacing: dp(6)
+        # Four compact "click-to-copy" buttons. The button's text is just
+        # the format name (EML / LaTeX / Python / JSON); clicking copies
+        # the rendered string for that format to the clipboard, and an
+        # MDTooltip on long-press shows a preview so the user knows what
+        # they're about to copy.
+        MDBoxLayout:
             size_hint_y: None
-            height: dp(140)
-
-            # ── EML column ────────────────────────────────────────────────
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(2)
-                MDBoxLayout:
-                    adaptive_height: True
-                    MDLabel:
-                        text: "EML"
-                        font_style: "Caption"
-                        size_hint_x: 1
-                    MDFlatButton:
-                        text: "Copy"
-                        size_hint_x: None
-                        width: dp(60)
-                        on_release: root.copy_field(eml_field)
-                MDBoxLayout:
-                    md_bg_color: 0.08, 0.08, 0.10, 1
-                    radius: [dp(6),]
-                    padding: dp(2)
-                    size_hint_y: None
-                    height: dp(108)
-                    ScrollView:
-                        do_scroll_x: False
-                        bar_width: dp(4)
-                        Label:
-                            id: eml_field
-                            text_size: self.width, None
-                            size_hint_y: None
-                            height: self.texture_size[1]
-                            color: 0.92, 0.92, 0.94, 1
-                            font_size: dp(12)
-                            halign: "left"
-                            valign: "top"
-                            padding: dp(6), dp(4)
-
-            # ── LaTeX column ──────────────────────────────────────────────
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(2)
-                MDBoxLayout:
-                    adaptive_height: True
-                    MDLabel:
-                        text: "LaTeX"
-                        font_style: "Caption"
-                        size_hint_x: 1
-                    MDFlatButton:
-                        text: "Copy"
-                        size_hint_x: None
-                        width: dp(60)
-                        on_release: root.copy_field(latex_field)
-                MDBoxLayout:
-                    md_bg_color: 0.08, 0.08, 0.10, 1
-                    radius: [dp(6),]
-                    padding: dp(2)
-                    size_hint_y: None
-                    height: dp(108)
-                    ScrollView:
-                        do_scroll_x: False
-                        bar_width: dp(4)
-                        Label:
-                            id: latex_field
-                            text_size: self.width, None
-                            size_hint_y: None
-                            height: self.texture_size[1]
-                            color: 0.92, 0.92, 0.94, 1
-                            font_size: dp(12)
-                            halign: "left"
-                            valign: "top"
-                            padding: dp(6), dp(4)
-
-            # ── Python column ─────────────────────────────────────────────
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(2)
-                MDBoxLayout:
-                    adaptive_height: True
-                    MDLabel:
-                        text: "Python"
-                        font_style: "Caption"
-                        size_hint_x: 1
-                    MDFlatButton:
-                        text: "Copy"
-                        size_hint_x: None
-                        width: dp(60)
-                        on_release: root.copy_field(python_field)
-                MDBoxLayout:
-                    md_bg_color: 0.08, 0.08, 0.10, 1
-                    radius: [dp(6),]
-                    padding: dp(2)
-                    size_hint_y: None
-                    height: dp(108)
-                    ScrollView:
-                        do_scroll_x: False
-                        bar_width: dp(4)
-                        Label:
-                            id: python_field
-                            text_size: self.width, None
-                            size_hint_y: None
-                            height: self.texture_size[1]
-                            color: 0.92, 0.92, 0.94, 1
-                            font_size: dp(12)
-                            halign: "left"
-                            valign: "top"
-                            padding: dp(6), dp(4)
-
-            # ── JSON column ───────────────────────────────────────────────
-            MDBoxLayout:
-                orientation: "vertical"
-                spacing: dp(2)
-                MDBoxLayout:
-                    adaptive_height: True
-                    MDLabel:
-                        text: "JSON"
-                        font_style: "Caption"
-                        size_hint_x: 1
-                    MDFlatButton:
-                        text: "Copy"
-                        size_hint_x: None
-                        width: dp(60)
-                        on_release: root.copy_field(json_field)
-                MDBoxLayout:
-                    md_bg_color: 0.08, 0.08, 0.10, 1
-                    radius: [dp(6),]
-                    padding: dp(2)
-                    size_hint_y: None
-                    height: dp(108)
-                    ScrollView:
-                        do_scroll_x: False
-                        bar_width: dp(4)
-                        Label:
-                            id: json_field
-                            text_size: self.width, None
-                            size_hint_y: None
-                            height: self.texture_size[1]
-                            color: 0.92, 0.92, 0.94, 1
-                            font_size: dp(12)
-                            halign: "left"
-                            valign: "top"
-                            padding: dp(6), dp(4)
+            height: dp(40)
+            spacing: dp(8)
+            CopyChip:
+                text: "Copy EML"
+                preview: root.copy_eml
+                on_release: root.copy_text(root.copy_eml, "EML")
+            CopyChip:
+                text: "Copy LaTeX"
+                preview: root.copy_latex
+                on_release: root.copy_text(root.copy_latex, "LaTeX")
+            CopyChip:
+                text: "Copy Python"
+                preview: root.copy_python
+                on_release: root.copy_text(root.copy_python, "Python")
+            CopyChip:
+                text: "Copy JSON"
+                preview: root.copy_json
+                on_release: root.copy_text(root.copy_json, "JSON")

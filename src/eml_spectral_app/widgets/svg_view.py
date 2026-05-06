@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional
 
 from kivy.core.image import Image as CoreImage
 from kivy.core.window import Window
-from kivy.properties import NumericProperty, StringProperty
+from kivy.properties import BooleanProperty, NumericProperty, StringProperty
 from kivy.uix.image import Image as KivyImage
 
 from eml_spectral_app.services.hit_test import nearest_node, project_widget_to_canvas
@@ -26,7 +26,15 @@ from eml_spectral_app.services.tree_render import render_tree_with_labels
 
 
 class TreeImageView(KivyImage):
-    """Kivy ``Image`` that renders an EML tree PNG and dispatches hovers."""
+    """Kivy ``Image`` that renders an EML tree PNG and dispatches hovers.
+
+    Events
+    ------
+    on_node_hover(node):
+        Fired when the hovered node changes. ``node`` is the layout-node
+        dict (eml-math ``eml-layout/v1`` schema) or ``None`` when the
+        cursor leaves the image / no node is close enough.
+    """
 
     __events__ = ("on_node_hover",)
 
@@ -34,6 +42,10 @@ class TreeImageView(KivyImage):
     edge_style = StringProperty("curve")
     width_px = NumericProperty(720)
     height_px = NumericProperty(440)
+    # When False the renderer draws topology-only (dots, no labels). The
+    # hover layer keeps working — useful for users who just want the
+    # shape and rely on hover for details.
+    show_labels = BooleanProperty(True)
 
     _last_tree: Optional[Any] = None
     _last_png: Optional[bytes] = None
@@ -44,15 +56,24 @@ class TreeImageView(KivyImage):
         super().__init__(**kw)
         Window.bind(mouse_pos=self._on_mouse_pos)
 
+    # ------------------------------------------------------------------
+    # rendering
+    # ------------------------------------------------------------------
     def show_tree(self, tree: Any, **flow_opts: Any) -> None:
+        """Render *tree* (every node label visible) and capture the layout
+        dict for hover hit-testing."""
         if tree is None:
             self._reset()
             return
+
+        # render_tree_with_labels composites flow_png with a label overlay
+        # for every non-leaf node — flow_png alone hides internal labels.
         png, layout = render_tree_with_labels(
             tree,
             width=int(self.width_px),
             height=int(self.height_px),
             direction=self.direction,
+            show_labels=self.show_labels,
         )
         self._last_tree = tree
         self._last_png = png
@@ -60,6 +81,7 @@ class TreeImageView(KivyImage):
         self.texture = CoreImage(BytesIO(png), ext="png").texture
 
     def show_png_bytes(self, png: bytes) -> None:
+        """Display arbitrary PNG bytes (no layout — hover is disabled)."""
         if not png:
             self._reset()
             return
@@ -82,6 +104,9 @@ class TreeImageView(KivyImage):
     def last_tree(self):
         return self._last_tree
 
+    # ------------------------------------------------------------------
+    # hover hit-test
+    # ------------------------------------------------------------------
     def on_node_hover(self, node: Optional[Dict[str, Any]]) -> None:
         """Default handler — KV listeners override this."""
 
@@ -93,6 +118,9 @@ class TreeImageView(KivyImage):
         self.dispatch("on_node_hover", node)
 
     def _image_rect(self) -> Optional[tuple]:
+        """``(ox, oy, w, h)`` of the actual image inside this widget,
+        accounting for ``keep_ratio`` letterboxing.
+        """
         if self.texture is None:
             return None
         nw, nh = self.norm_image_size
