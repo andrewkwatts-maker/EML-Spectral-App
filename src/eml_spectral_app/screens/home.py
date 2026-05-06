@@ -22,7 +22,6 @@ from eml_spectral_app.widgets.svg_view import TreeImageView
 
 
 _DEBOUNCE_S = 0.25
-_HOVER_HINT = "Hover a node in the tree to see its details"
 
 
 class HomeScreen(MDScreen):
@@ -46,7 +45,6 @@ class HomeScreen(MDScreen):
     copy_json = StringProperty("")
 
     status = StringProperty("Type a math expression — right-click the input for function names")
-    hover_info = StringProperty(_HOVER_HINT)
 
     # Pill switch — False = show the user's typed expression. True = show
     # the compressed search result. LaTeX preview and EML graph swap
@@ -229,7 +227,6 @@ class HomeScreen(MDScreen):
         self.copy_latex = ""
         self.copy_python = ""
         self.copy_json = ""
-        self.hover_info = _HOVER_HINT
         self._last_parsed = None
 
     def _clear_outputs(self, status: str) -> None:
@@ -240,10 +237,29 @@ class HomeScreen(MDScreen):
             self.latex_preview_eml.texture = None
 
     # ------------------------------------------------------------------
-    # hover
+    # hover — drives the two LaTeX preview panes. Hovering a node swaps
+    # both panes to that subtree's normal-math + literal-EML LaTeX;
+    # leaving the graph reverts them to the whole-formula view.
     # ------------------------------------------------------------------
     def _on_node_hover(self, _view, node) -> None:
-        self.hover_info = _format_hover(node)
+        if node is None:
+            self._refresh_latex_preview(self._current_text(), self._last_parsed)
+            self.status = (
+                f"OK — {self._last_parsed.info_line}"
+                if self._last_parsed is not None
+                else self.status
+            )
+            return
+        normal = node.get("subexpr_normal") or ""
+        eml = node.get("subexpr_eml") or ""
+        if self.latex_preview_normal is not None:
+            self.latex_preview_normal.set_latex(normal)
+        if self.latex_preview_eml is not None:
+            self.latex_preview_eml.set_latex(eml)
+        label = node.get("label") or "?"
+        kind = node.get("kind") or "?"
+        depth = node.get("depth")
+        self.status = f"hover: {node.get('id')}  kind={kind}  depth={depth}  label={label}"
 
     # ------------------------------------------------------------------
     # example chips: replace input with a curated formula
@@ -295,25 +311,3 @@ class HomeScreen(MDScreen):
         return (self.expr_field.text if self.expr_field else "").strip()
 
 
-def _format_hover(node) -> str:
-    """Two-line hover string — normal math on top, literal EML below."""
-    if node is None:
-        return _HOVER_HINT
-    label = node.get("label") or "?"
-    role = "leaf" if node.get("is_leaf") else "internal"
-    head = (
-        f"{node.get('id')}  ·  {node.get('kind')}  ·  depth={node.get('depth')}"
-        f"  ·  {role}  ·  label={label}"
-    )
-    normal = node.get("subexpr_normal") or ""
-    eml = node.get("subexpr_eml") or ""
-    if len(normal) > 110:
-        normal = normal[:107] + "…"
-    if len(eml) > 110:
-        eml = eml[:107] + "…"
-    parts = [head]
-    if normal:
-        parts.append(f"normal math:  {normal}")
-    if eml:
-        parts.append(f"EML:          {eml}")
-    return "\n".join(parts)

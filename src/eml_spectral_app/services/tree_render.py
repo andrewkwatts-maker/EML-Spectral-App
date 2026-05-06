@@ -139,7 +139,9 @@ def render_tree_with_labels(
     font_size: int = 13,
     show_labels: bool = True,
     out_label: str = "Out",
-    supersample: int = 2,
+    supersample: int = 3,
+    sibling_spacing: float = 76.0,
+    subtree_spacing: float = 28.0,
 ) -> Tuple[bytes, Dict[str, Any]]:
     """Return ``(png_bytes, layout_dict)`` for *tree*.
 
@@ -149,8 +151,19 @@ def render_tree_with_labels(
     ``supersample`` draws at N× the layout canvas size and resamples down
     with LANCZOS so the bezier curves and rounded boxes are anti-aliased
     on output (PIL.ImageDraw is aliased by default).
+
+    ``sibling_spacing`` / ``subtree_spacing`` are forwarded to eml-math's
+    ``compute_layout`` and bumped above the library defaults (40 / 12)
+    because pure-EML trees have many close ``eml(L, R)`` nodes whose
+    label boxes were colliding in the previous render. Larger spacing
+    plus auto_canvas keeps everything legible.
     """
-    layout = tree.layout(direction=direction, canvas=(width, height))
+    layout = tree.layout(
+        direction=direction,
+        canvas=(width, height),
+        sibling_spacing=sibling_spacing,
+        subtree_spacing=subtree_spacing,
+    )
     canvas_w = float(layout["canvas"]["width"])
     canvas_h = float(layout["canvas"]["height"])
     _attach_subexpressions(tree, layout)
