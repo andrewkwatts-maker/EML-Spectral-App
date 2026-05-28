@@ -25,8 +25,8 @@ jobs:
 
       - name: Install eml-math + eml-spectral from GitHub (pre-PyPI release window)
         run: |
-          pip install "eml-math @ git+https://github.com/andrewkwatts-maker/EML-Math@v2.0.36"
-          pip install "eml-spectral @ git+https://github.com/andrewkwatts-maker/EML-Spectral@v2.0.36"
+          pip install "eml-math @ git+https://github.com/andrewkwatts-maker/EML-Math@v2.0.37"
+          pip install "eml-spectral @ git+https://github.com/andrewkwatts-maker/EML-Spectral@v2.0.37"
 
       - name: Install app + dev deps
         run: pip install .[dev]
