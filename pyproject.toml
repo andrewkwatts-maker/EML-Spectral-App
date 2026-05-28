@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eml-spectral-app"
-version = "1.3.1"
+version = "2.0.36"
 description = "KivyMD visual explorer for the eml-spectral PyPI library: Spectral flow Phi, Lorentz boosts, Clifford / Octonion / E7 / E8 algebras, named GR metrics, E8/Leech lattices, 167 spectral + math constants."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -34,8 +34,8 @@ dependencies = [
     "kivy>=2.3,<3",
     "kivymd>=1.2,<2",
     "Pillow>=10",
-    "eml-math>=1.3.0",
-    "eml-spectral>=1.3.0",
+    "eml-math>=2.0.36",
+    "eml-spectral>=2.0.36",
     "matplotlib>=3.7",
 ]
 

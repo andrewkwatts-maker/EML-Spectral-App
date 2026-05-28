@@ -25,14 +25,14 @@ jobs:
 
       - name: Install eml-math + eml-spectral from GitHub (pre-PyPI release window)
         run: |
-          pip install "eml-math @ git+https://github.com/andrewkwatts-maker/EML-Math@v1.3.0"
-          pip install "eml-spectral @ git+https://github.com/andrewkwatts-maker/EML-Spectral@v1.3.0"
+          pip install "eml-math @ git+https://github.com/andrewkwatts-maker/EML-Math@v2.0.36"
+          pip install "eml-spectral @ git+https://github.com/andrewkwatts-maker/EML-Spectral@v2.0.36"
 
       - name: Install app + dev deps
         run: pip install .[dev]
 
-      - name: Run smoke tests (headless)
+      - name: Run smoke tests (headless under xvfb)
         env:
           KIVY_NO_ARGS: "1"
-          KIVY_WINDOW: mock
-        run: pytest tests/ -v --tb=short
+          KIVY_NO_CONSOLELOG: "1"
+        run: xvfb-run -a pytest tests/ -v --tb=short
