@@ -208,6 +208,19 @@
                 icon_color: app.theme_cls.primary_color if root.show_labels else (0.7, 0.7, 0.75, 1)
                 on_release: root.toggle_labels()
             Widget:
+                size_hint_x: None
+                width: dp(16)
+            MDLabel:
+                text: "Expand consts:"
+                theme_text_color: "Hint"
+                size_hint_x: None
+                width: dp(140)
+            MDIconButton:
+                icon: "expand-all" if root.expand_constants else "expand-all-outline"
+                theme_icon_color: "Custom"
+                icon_color: app.theme_cls.primary_color if root.expand_constants else (0.7, 0.7, 0.75, 1)
+                on_release: root.toggle_expand_constants()
+            Widget:
 
         # ─── Tree render ──────────────────────────────────────────────────
         Card:

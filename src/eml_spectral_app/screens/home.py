@@ -57,6 +57,10 @@ class HomeScreen(MDScreen):
     tree_direction = StringProperty("down")
     # Topology-only mode: hide every node's label box (hover still works).
     show_labels = BooleanProperty(True)
+    # When on, numeric literals (> 1) are expanded into EML sub-graphs
+    # via eml_math.expand_numeric_constants — useful for showing the
+    # user how a value like 7 is built from EML primitives.
+    expand_constants = BooleanProperty(False)
 
     _parser: MultiParser = None  # type: ignore[assignment]
     _parse_event: Any = None
@@ -118,6 +122,13 @@ class HomeScreen(MDScreen):
             self.tree_view.show_labels = self.show_labels
         self._schedule_parse()
 
+    # "Expand constants" toggle — replaces each numeric literal > 1 with
+    # its EML-compressed sub-graph so the user can see how the value is
+    # built from EML primitives.
+    def toggle_expand_constants(self) -> None:
+        self.expand_constants = not self.expand_constants
+        self._schedule_parse()
+
     def _on_text_changed(self, _instance, _value) -> None:
         self._schedule_parse()
 
@@ -137,7 +148,7 @@ class HomeScreen(MDScreen):
 
         parsed = None
         try:
-            parsed = self._parser.parse(text)
+            parsed = self._parser.parse(text, expand_constants=self.expand_constants)
         except Exception as exc:                       # noqa: BLE001
             self.status = f"{type(exc).__name__}: {exc}"
 

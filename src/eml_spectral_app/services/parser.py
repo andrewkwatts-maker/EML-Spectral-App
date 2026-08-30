@@ -14,7 +14,10 @@ from typing import Any, Iterable, List, Optional, Protocol
 # onto Python form lives in eml-math now (the library is the source of
 # truth for what the parser accepts). Re-export under the historical
 # private name so the existing call site stays unchanged.
-from eml_math import normalize_input as _normalize_input
+from eml_math import (
+    expand_numeric_constants as _expand_numeric_constants,
+    normalize_input as _normalize_input,
+)
 
 
 @dataclass
@@ -148,8 +151,22 @@ class MultiParser:
     def __init__(self, strategies: Iterable[ParseStrategy]) -> None:
         self._strategies: List[ParseStrategy] = list(strategies)
 
-    def parse(self, text: str) -> Optional[ParsedExpression]:
+    def parse(
+        self,
+        text: str,
+        *,
+        expand_constants: bool = False,
+    ) -> Optional[ParsedExpression]:
+        """Parse *text* through the strategy chain.
+
+        Pass ``expand_constants=True`` to first rewrite every numeric
+        literal > 1 into its EML-compressed form (via eml-math's
+        ``expand_numeric_constants``) so the resulting tree shows each
+        constant as an explicit sub-graph instead of an opaque leaf.
+        """
         text = _normalize_input(text)
+        if expand_constants:
+            text = _expand_numeric_constants(text)
         for strat in self._strategies:
             if not strat.applies(text):
                 continue
